@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient file</title>
+  <link rel="stylesheet" href="stylesheet.css">
+</head>
+
+<body>
+
+
+  <div id="nav-Bar">
+    <button id="doctorBtn" class="doctor-btn">
+      <p class="doctor-name">Dr.Richmond Harris</p>
+      <img src="user-profile-icon-free-vector.jpg" alt="User Logo" class="user-logo">
+    </button>
+  </div>
+
+  <div id="doctorInfo" class="doctor-info hidden">
+  </div>
+
+  <div class="container">
+    <h2>Patient file</h2>
+    <label for="patientId">Enter Patient ID:</label>
+    <input type="text" id="patientId" placeholder="Patient ID">
+    <div id="patientData"></div>
+    <button onclick="searchPatient()">Search</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script>
+    async function searchPatient() {
+      const patientId = document.getElementById('patientId').value.trim();
+      if (!patientId) {
+        alert('Please enter a Patient ID.');
+        return;
+      }
+
+      const apiUrl =
+        `https://tablettest.mymps.co.za/tablet/mps-api/api/v1/2105f45b-b322-4e02-93cd-31e41fa1860e/clinical/patientclinicalnotes/${patientId}`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiKi9zeXN0ZW0tYWRtaW4iLCJmdWxsX25hbWUiOiJEYXRhbG9hZCIsInVzZXJfaWQiOiIwZGRlYTYzZS1mZDI4LTQyNDItODM3YS1kNWNmNjFkZWFiOTkiLCJpc3MiOiJodHRwOi8vaGItbXBzL2FwaS92MSIsImF1ZCI6IjE3OGRjY2NhLWEyN2ItNDlkOC04MWVlLWZmNjcwY2NkYzY0YSIsImV4cCI6MTc2NTUyNDYxOCwibmJmIjoxNzYyOTMyNjE4fQ.p0pG71VHOM_cK_oheSgQSVyQL3NPIT7xu1JQOhyiEg0',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            alert('Session expired. Please log in again.');
+            logout();
+          } else {
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
+          }
+          return;
+        }
+
+        const data = await response.json();
+        console.log("API response:", data);
+
+        const container = document.getElementById('patientData');
+        container.innerHTML = "";
+
+        if (!data || !data.Patient) {
+          container.innerHTML = '<p>No clinical notes found for this patient.</p>';
+          return;
+        }
+
+        const patientDetails = data.Patient || {};
+        const note = data.Note || "No note available";
+
+        let patientInfoHtml = `
+  <div class="patient-card">
+    <div class="patient-header">
+      <div class="patient-name">
+        <h2>${data.Patient.PatientDetails.FirstName || ''} ${data.Patient.PatientDetails.Surname || ''}</h2>
+        <p><strong>Account No:</strong> ${data.Patient.PatientAccountDetails.AccountNo || ''}</p>
+        </div>
+        <div class="medical-aid">
+        <p><strong>Medical Aid No:</strong> ${data.Patient.PatientAccountDetails.MedicalAidMembershipNumber || ''}</p>
+        <p><strong>Medical Aid Name:</strong> ${data.Patient.PatientAccountDetails.MedicalAidName || ''}</p>
+        <p><strong>Plan:</strong> ${data.Patient.PatientAccountDetails.MedicalAidPlan || ''}</p>
+      </div>
+    </div>
+  `;
+
+        let notesHtml = `
+  <h4>Clinical Notes</h4>
+  <div class="note-card">
+    <p><strong>Captured:</strong> ${data.CapturedDate ? new Date(data.CapturedDate).toLocaleString() : 'N/A'}</p>
+    <p><strong>Note:</strong> ${note}</p>
+    </div>
+  `;
+
+        container.innerHTML = patientInfoHtml + notesHtml;
+
+      } catch (error) {
+        console.error("Error fetching patient:", error);
+      }
+    }
+
+    const doctorData = {
+      PracticeName: "Dr R Harris Practice",
+      PracticeNumber: "6488548",
+      TreatingPracticeNumber: "5555534",
+      TreatingDoctorName: "Dr Richard Harris",
+      DispensingDoctor: "Yes",
+      DispensingLicNum: "678905678",
+      HPCSANumber: "121212121212121MP",
+      Qualification: "MbCHB",
+      Specialty: "GP",
+      TelephoneNumber: "0102587200",
+      Fax: "3333333333",
+      CellphoneNumber: "4444444444",
+      EmailAddress: "QATest@healthbridge.co.za",
+      PhysicalAddress: "Blanco\nPhysical Line 2 bb\nPhysical Line 3  bbb\n1000",
+    };
+
+    const doctorBtn = document.getElementById("doctorBtn");
+    const doctorInfo = document.getElementById("doctorInfo");
+
+    doctorBtn.addEventListener("click", () => {
+      document.querySelector(".container").style.display = "none";
+
+      doctorInfo.classList.add("visible");
+      doctorInfo.innerHTML = `
+      <div class= "doctor-details-container">
+
+      <div class="close-btn-container">
+      <button class= "close-btn" id="closeDoctor">&times;</button>
+      </div>
+      <div class="doctor-grid">
+      <div class="doctor-card"><strong>Practice:</strong>${doctorData.PracticeName}</div>
+      <div class="doctor-card"><strong>Specialty:</strong>${doctorData.Specialty}</div>
+      <div class="doctor-card"><strong>Qualification:</strong>${doctorData.Qualification}</div>
+      <div class="doctor-card"><strong>PracticeNumber:</strong>${doctorData.PracticeNumber}</div>
+      <div class="doctor-card"><strong>HPCSA:</strong>${doctorData.HPCSANumber}</div>
+      <div class="doctor-card"><strong>DispensingDoctor:</strong>${doctorData.DispensingDoctor}</div>
+      <div class="doctor-card"><strong>DispensingLicense:</strong>${doctorData.DispensingLicNum}</div>
+      <div class="doctor-card"><strong>Tel:</strong>${doctorData.TelephoneNumber}</div>
+      <div class="doctor-card"><strong>Cell:</strong>${doctorData.CellphoneNumber}</div>
+      <div class="doctor-card"><strong>Email:</strong>${doctorData.EmailAddress}</div>
+      <div class="doctor-card"><strong>Address:</strong>${doctorData.PhysicalAddress.replace(/\n/g, "<br>")}</div>
+      </div>
+      </div>
+        `;
+
+      document.getElementById("closeDoctor").addEventListener("click", () => {
+        doctorInfo.classList.remove("visible");
+        document.querySelector(".container").style.display = "block";
+      });
+    });
+    function logout() {
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+
+</html>
